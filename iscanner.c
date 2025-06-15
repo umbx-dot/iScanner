@@ -5,34 +5,19 @@
 
 static scan_config_t *global_config = NULL;
 
+
 void print_banner(void) {
-    printf("\n");
-    printf("┌─────────────────────────────────────────────────────────────┐\n");
-    printf("│                      iScanner v2.0                         │\n");
-    printf("│                Advanced Port Scanner                        │\n");
-    printf("│              Ultra-Fast Multi-threaded Engine              │\n");
-    printf("└─────────────────────────────────────────────────────────────┘\n");
-    printf("\n");
+    // removed it because it was unnecessary you can add one if you want
 }
 
 void print_usage(void) {
     printf("Usage: iscanner <target> -range <start> <end> -power <1|2>\n");
-    printf("\nParameters:\n");
-    printf("  target        IP address or domain name (e.g., 8.8.8.8 or google.com)\n");
-    printf("  -range        Port range to scan (1-65535)\n");
-    printf("  -power        Thread power level:\n");
-    printf("                1 = Half CPU power (conservative)\n");
-    printf("                2 = Full CPU power (aggressive)\n");
-    printf("\nExamples:\n");
-    printf("  iscanner 192.168.1.1 -range 1 1000 -power 1\n");
-    printf("  iscanner google.com -range 80 443 -power 2\n");
-    printf("  iscanner 8.8.8.8 -range 1 65535 -power 2\n");
     printf("\n");
 }
 
 void signal_handler(int sig) {
     if (global_config) {
-        printf("\n\n[!] Scan interrupted by user\n");
+        printf("\n\nScan interrupted by user\n");
         print_results(global_config);
         cleanup_scan(global_config);
     }
@@ -91,81 +76,129 @@ void print_progress(scan_config_t *config) {
     
     pthread_mutex_unlock(&config->progress_mutex);
     
-    double progress = (double)scanned / total * 100.0;
-    int bar_width = 50;
-    int filled = (int)(progress * bar_width / 100.0);
-    
-    printf("\r[");
-    for (int i = 0; i < bar_width; i++) {
-        if (i < filled) printf("█");
-        else printf("░");
-    }
-    printf("] %.1f%% (%d/%d) Open: %d", progress, scanned, total, open);
+    printf("\rScanned ");
+    printf("%d", scanned);
+    printf(" of ");
+    printf("%d", total);
+    printf(" ports. Found ");
+    printf("%d", open);
+    printf(" open");
     fflush(stdout);
+}
+
+const char* get_service_name(int port) {
+    switch (port) {
+        case 20: return "ftp-data";
+        case 21: return "ftp";
+        case 22: return "ssh";
+        case 23: return "telnet";
+        case 25: return "smtp";
+        case 53: return "dns";
+        case 67: return "dhcp-server";
+        case 68: return "dhcp-client";
+        case 69: return "tftp";
+        case 79: return "finger";
+        case 80: return "http";
+        case 88: return "kerberos";
+        case 110: return "pop3";
+        case 111: return "rpcbind";
+        case 119: return "nntp";
+        case 123: return "ntp";
+        case 135: return "ms-rpc";
+        case 137: return "netbios-ns";
+        case 138: return "netbios-dgm";
+        case 139: return "netbios-ssn";
+        case 143: return "imap";
+        case 161: return "snmp";
+        case 162: return "snmp-trap";
+        case 389: return "ldap";
+        case 443: return "https";
+        case 445: return "smb";
+        case 465: return "smtp-ssl";
+        case 514: return "syslog";
+        case 515: return "lpr";
+        case 587: return "smtp-submission";
+        case 631: return "ipp";
+        case 636: return "ldaps";
+        case 873: return "rsync";
+        case 993: return "imaps";
+        case 995: return "pop3s";
+        case 1080: return "socks";
+        case 1433: return "mssql";
+        case 1521: return "oracle";
+        case 2049: return "nfs";
+        case 2121: return "ftp-proxy";
+        case 3128: return "squid-proxy";
+        case 3306: return "mysql";
+        case 3389: return "rdp";
+        case 5060: return "sip";
+        case 5432: return "postgresql";
+        case 5900: return "vnc";
+        case 6379: return "redis";
+        case 8080: return "http-proxy";
+        case 8443: return "https-alt";
+        case 9100: return "jetdirect";
+        case 27017: return "mongodb";
+        default: return "unknown"; // you can add more here btw 
+    }
 }
 
 void print_results(scan_config_t *config) {
     time_t end_time = time(NULL);
     double elapsed = difftime(end_time, config->start_time);
     
-    printf("\n\n┌─────────────────────────────────────────────────────────────┐\n");
-    printf("│                       SCAN RESULTS                         │\n");
-    printf("└─────────────────────────────────────────────────────────────┘\n");
-    printf("\nTarget: %s\n", config->target_ip);
-    printf("Ports Scanned: %d-%d (%d total)\n", config->start_port, config->end_port, config->total_ports);
-    printf("Open Ports: %d\n", config->open_port_count);
-    printf("Scan Time: %.2f seconds\n", elapsed);
-    printf("Scan Rate: %.0f ports/sec\n", config->total_ports / elapsed);
+    printf("\n\nTarget ");
+    printf("%s", config->target_ip);
+    printf("\n");
+    printf("Scanned ");
+    printf("%d", config->total_ports);
+    printf(" ports in ");
+    printf("%.0f", elapsed);
+    printf(" seconds\n");
     
     if (config->open_port_count > 0) {
-        printf("\nOpen Ports:\n");
-        printf("┌──────────┬─────────────────────────────────────────────────┐\n");
-        printf("│   PORT   │                   SERVICE                       │\n");
-        printf("├──────────┼─────────────────────────────────────────────────┤\n");
+        printf("Open ports:\n");
         
         for (int i = 0; i < config->open_port_count; i++) {
             int port = config->open_port_list[i];
-            const char *service = "unknown";
-            
-            switch (port) {
-                case 21: service = "ftp"; break;
-                case 22: service = "ssh"; break;
-                case 23: service = "telnet"; break;
-                case 25: service = "smtp"; break;
-                case 53: service = "dns"; break;
-                case 80: service = "http"; break;
-                case 110: service = "pop3"; break;
-                case 143: service = "imap"; break;
-                case 443: service = "https"; break;
-                case 993: service = "imaps"; break;
-                case 995: service = "pop3s"; break;
-                case 3389: service = "rdp"; break;
-                case 5432: service = "postgresql"; break;
-                case 3306: service = "mysql"; break;
-            }
-            
-            printf("│   %4d   │ %-47s │\n", port, service);
+            const char *service = get_service_name(port);
+            printf("%d", port);
+            printf(" ");
+            printf("%s", service);
+            printf("\n");
         }
-        printf("└──────────┴─────────────────────────────────────────────────┘\n");
+    } else {
+        printf("No open ports found\n");
     }
     printf("\n");
 }
 
 void perform_scan(scan_config_t *config) {
-    printf("\n[+] Initializing scan engine...\n");
-    printf("[+] Target: %s\n", config->target_ip);
-    printf("[+] Port Range: %d-%d (%d ports)\n", config->start_port, config->end_port, config->total_ports);
-    printf("[+] Power Level: %d (%s)\n", config->power_level, 
-           config->power_level == 1 ? "Conservative" : "Aggressive");
+    printf("\nInitializing scan engine...\n");
+    printf("Target: %s\n", config->target_ip);
+    printf("Port Range: ");
+    printf("%d", config->start_port);
+    printf(" to ");
+    printf("%d", config->end_port);
+    printf(" total ");
+    printf("%d", config->total_ports);
+    printf(" ports\n");
+    if (config->power_level == 1) {
+        printf("Power Level: 1 Conservative\n");
+    } else {
+        printf("Power Level: 2 Aggressive\n");
+    }
     
     thread_pool_t *pool = create_thread_pool(config->power_level, config->total_ports);
     if (!pool) {
-        fprintf(stderr, "[!] Failed to create thread pool\n");
+        fprintf(stderr, "Failed to create thread pool\n");
         return;
     }
     
-    printf("[+] Thread Pool: %d threads initialized\n", pool->thread_count);
-    printf("[+] Starting scan...\n\n");
+    printf("Thread Pool: ");
+    printf("%d", pool->thread_count);
+    printf(" threads initialized\n");
+    printf("Starting scan...\n\n");
     
     config->start_time = time(NULL);
     
@@ -198,19 +231,19 @@ int main(int argc, char *argv[]) {
     signal(SIGTERM, signal_handler);
     
     if (!init_network()) {
-        fprintf(stderr, "[!] Failed to initialize network\n");
+        fprintf(stderr, "Failed to initialize network\n");
         return 1;
     }
     
     print_banner();
     
     if (!is_in_path("iscanner")) {
-        printf("[+] First run detected - adding to system PATH...\n");
+        printf("First run detected - adding to system PATH...\n");
         if (setup_path_integration()) {
-            printf("[+] Successfully added to PATH\n");
-            printf("[+] You can now run 'iscanner' from anywhere\n\n");
+            printf("Successfully added to PATH\n");
+            printf("You can now run 'iscanner' from anywhere\n\n");
         } else {
-            printf("[!] Failed to add to PATH - manual setup required\n\n");
+            printf("Failed to add to PATH - manual setup required\n\n");
         }
     }
     

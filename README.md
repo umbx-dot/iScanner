@@ -1,17 +1,14 @@
-# iScanner v2.0 - Advanced Port Scanner
-
-Ultra-fast multi-threaded port scanner with intelligent thread management and automatic PATH integration.
+# iScanner v1.2 - Fast Port Scanner
 
 ## Features
 
-- **Ultra-Fast Scanning**: Advanced thread pool with smart load balancing
-- **Dual Power Modes**: Conservative (50% CPU) and Aggressive (100% CPU) scanning
-- **Cross-Platform**: Full Linux and Windows compatibility
-- **Auto PATH Integration**: Automatically adds itself to system PATH on first run
-- **Domain Resolution**: Supports both IP addresses and domain names
-- **Real-time Progress**: Live progress bar with scan statistics
-- **Smart Thread Management**: Automatically calculates optimal thread count
-- **Comprehensive Results**: Detailed scan results with service identification
+- **Fast Scanning**:
+- **Dual Power Modes**
+- **Cross-Platform**
+- **Auto PATH Integration**
+- **Domain Resolution**
+- **Real-time Progress**
+- **Smart Thread Management**
 
 ## Compilation
 
@@ -45,24 +42,16 @@ iscanner <target> -range <start> <end> -power <1|2>
 
 ### Examples
 ```bash
-# Scan common ports on localhost
-iscanner 127.0.0.1 -range 1 1000 -power 1
 
-# Aggressive scan of Google's DNS
 iscanner 8.8.8.8 -range 1 65535 -power 2
 
-# Scan web ports on domain
 iscanner google.com -range 80 443 -power 1
 ```
 
 ## Performance
 
-iScanner is designed to be significantly faster than traditional port scanners like nmap through:
-- Intelligent thread pool management
-- Optimized socket operations
-- Minimal overhead per connection
-- Smart timeout handling
-- CPU-aware thread scaling
+iScanner is designed to be significantly faster than traditional port scanners like nmap because it is written in C and has smart threading.
+
 
 ## Installation
 
